@@ -1,0 +1,52 @@
+ <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/itemSelectedColor"
+    android:layout_margin="5dp"
+    android:elevation="5dp"
+    android:padding="10dp">
+
+
+     <TextView android:id="@+id/timeTxt"
+        android:layout_width="0dp" 
+        android:layout_height="fill_parent"
+        android:layout_weight="0.20"
+        android:gravity="center_vertical"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        />
+           
+     <ImageView android:id="@+id/imgIcon"
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+		android:layout_weight="0.20"
+        android:gravity="center_vertical"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp" />
+
+     <TextView
+         android:id="@+id/tempTxt"
+         android:layout_width="0dp"
+         android:layout_height="fill_parent"
+         android:layout_weight="0.20"
+         android:layout_marginBottom="1dp"
+         android:gravity="center_vertical"
+         android:textColor="@color/white"
+         android:textSize="22sp"
+         />
+
+     <TextView
+         android:id="@+id/descrTxt"
+         android:layout_width="0dp"
+         android:layout_height="fill_parent"
+         android:layout_weight="0.40"
+         android:layout_marginTop="1dp"
+         android:gravity="center_horizontal"
+         android:textColor="@color/white"
+         android:textSize="16sp"
+         />
+       
+</LinearLayout>

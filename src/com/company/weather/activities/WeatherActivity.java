@@ -1,15 +1,5 @@
 package com.company.weather.activities;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
 import android.app.ActionBar;
@@ -20,7 +10,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -307,29 +296,8 @@ public class WeatherActivity extends ActionBarActivity implements
 
 	public void setLocation(Location location) {
 		
-		Log.d("Location","onLocationChanged");
-//		if(this.location == null || location.distanceTo(this.location) > 100 )
-//		{
-//			if(locationDialog != null && locationDialog.isShowing())
-				locationDialog.dismiss();
-			Log.d("Location","Distance is greater than 100 meter");
-//			Toast.makeText(WeatherActivity.this, "LocationUpdated", Toast.LENGTH_SHORT).show();
-			
-			// Below method uses retrofit and Volley to pull Data
-			// Volley is commented out
-			
+			locationDialog.dismiss();		
 			requestWeatherData(location);
-			
-			// Using Async class to pull data
-//			String uri = "http://www.30secondweather.com/api/v1/?lat="+location.getLatitude()+"&lng="+location.getLongitude();
-//			asyncProgress = new ProgressDialog(WeatherActivity.this);
-//			asyncProgress.setMessage("Hang on pulling Data using AsyncTask");
-//			asyncProgress.setIndeterminate(false);
-//			asyncProgress.setCancelable(false);
-//			asyncProgress.show();
-//			new RequestData().execute(uri);
-//			this.location = location;
-//		}
 	}
 	
 	
@@ -337,7 +305,7 @@ public class WeatherActivity extends ActionBarActivity implements
 		
 		String ENDPOINT = "http://www.30secondweather.com";
 //		weatherDialog.setTitle("Getting Weather Info");
-		weatherDialog.setMessage("Using RetroFit");
+		weatherDialog.setMessage("Using Volley");
 		weatherDialog.setIndeterminate(false);
 		weatherDialog.setCancelable(false);
 		weatherDialog.show();
@@ -377,41 +345,6 @@ public class WeatherActivity extends ActionBarActivity implements
 				});
 		
 		request.add(getWeatherRequest);
-		
-//		 Retrofit call
-/*		RestAdapter adapter = new RestAdapter.Builder()
-									.setEndpoint(ENDPOINT)
-									.build();
-		
-		WeatherApi weatherApi = adapter.create(WeatherApi.class);
-		startTime = System.currentTimeMillis();
-		weatherApi.getWeather(location.getLatitude(),location.getLongitude(),new Callback<WeatherInfo>() {
-			
-			@Override
-			public void success(WeatherInfo arg0, Response arg1) {
-				
-				endTime = System.currentTimeMillis();
-				Log.d("TAG",endTime-startTime + ":Millisecs");
-				Toast.makeText(getApplicationContext(), endTime-startTime +":Milli Seconds", Toast.LENGTH_SHORT).show();
-				
-				setWeatherInfo(arg0);
-				if(weatherDialog != null && weatherDialog.isShowing())
-				weatherDialog.dismiss();
-				
-				if(locationChangedInterface!=null)
-				{
-					locationChangedInterface.onLocationChanged(currentWeatherInfo);
-				}
-				Log.d("weather",currentWeatherInfo.getResult().getLocation().getAddress());
-			}
-			
-			@Override
-			public void failure(RetrofitError arg0) {
-				Log.d("weather","Failed to retrieve data");
-				weatherDialog.dismiss();
-			}
-		});
-*/		
 	}
 	
 	@Override
@@ -428,54 +361,4 @@ public class WeatherActivity extends ActionBarActivity implements
 		this.retainedFragment = retainedFragment;
 	}
 	
-	public class RequestData extends AsyncTask<String, Void, String>
-	{
-
-		@Override
-		protected String doInBackground(String... uri) {
-			
-			HttpClient   httpClient = new DefaultHttpClient();
-			HttpResponse response;
-			String       responseString = null;
-			
-			try {
-				response = httpClient.execute(new HttpGet(uri[0]));
-				StatusLine statusLine = response.getStatusLine();
-				if(statusLine.getStatusCode() == HttpStatus.SC_OK)
-				{
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					response.getEntity().writeTo(out);
-					responseString = out.toString();
-					out.close();
-				}
-				else
-				{
-					response.getEntity().getContent().close();
-				}
-			}
-			catch(ClientProtocolException e)
-			{
-				e.printStackTrace();
-			}
-			catch(IOException e)
-			{
-				e.printStackTrace();
-			}
-			return responseString;
-		}
-		
-	
-		@Override
-		protected void onPostExecute(String result) {
-			super.onPostExecute(result);
-			Gson gson = new Gson();
-			currentWeatherInfo = gson.fromJson(result, WeatherInfo.class);
-			if(locationChangedInterface!=null)
-			{
-				locationChangedInterface.onLocationChanged(currentWeatherInfo);
-			}
-			if(asyncProgress != null && asyncProgress.isShowing())
-				asyncProgress.dismiss();
-		}
-	}
 }

@@ -1,8 +1,6 @@
 
 package com.company.weather.model;
 
-import java.util.List;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -20,6 +18,7 @@ public class Watch implements Parcelable{
 	public int describeContents() {
 		return 0;
 	}
+	
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		

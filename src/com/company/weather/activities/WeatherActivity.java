@@ -1,12 +1,18 @@
 package com.company.weather.activities;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.json.JSONObject;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.location.Location;
@@ -23,6 +29,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -34,9 +43,11 @@ import com.android.volley.toolbox.Volley;
 import com.company.weather.R;
 import com.company.weather.fragements.HourlyFragment;
 import com.company.weather.fragements.NavigationDrawerFragment;
+import com.company.weather.fragements.PlacesFragment;
 import com.company.weather.fragements.VideoFragment;
 import com.company.weather.fragements.WhereAmIFragment;
 import com.company.weather.interfaces.MyLocationChangedInterface;
+import com.company.weather.model.Place;
 import com.company.weather.model.WeatherInfo;
 import com.company.weather.utils.WeatherUtils;
 import com.google.android.gms.common.ConnectionResult;
@@ -47,6 +58,7 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class WeatherActivity extends ActionBarActivity implements 
 														ConnectionCallbacks,
@@ -65,11 +77,16 @@ public class WeatherActivity extends ActionBarActivity implements
 	ProgressDialog           weatherDialog;
 	ProgressDialog           locationDialog;
 	ProgressDialog           asyncProgress;
-	RequestQueue             request;
+	RequestQueue             requestQueue;
 	long                     startTime;
 	long                     endTime;
 	ActionBar                actionBar;
 	Toolbar                  toolbar;
+	Spinner                  places_spinner;
+	// Later this can be changed to List<Place>
+	List<String>             city_list;
+	SharedPreferences        prefs;
+	OnSharedPreferenceChangeListener sharedPrefListener;
 	
 	public MyLocationChangedInterface locationChangedInterface;
 	
@@ -94,12 +111,29 @@ public class WeatherActivity extends ActionBarActivity implements
 	        builder.create().show();
 		}
 		
-		request        = Volley.newRequestQueue(this);
-		weatherDialog  = new ProgressDialog(WeatherActivity.this);
-		locationDialog = new ProgressDialog(WeatherActivity.this);
+		requestQueue  	   = Volley.newRequestQueue(this);
+		weatherDialog	   = new ProgressDialog(WeatherActivity.this);
+		locationDialog	   = new ProgressDialog(WeatherActivity.this);
+		toolbar        	   = (Toolbar) findViewById(R.id.app_bar);
+		places_spinner 	   = (Spinner) findViewById(R.id.places_spinner);
+		actionBar          = getActionBar();
+		prefs              = getPreferences(Context.MODE_PRIVATE);
+		sharedPrefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+			
+			@Override
+			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+					String key) {
+				Toast.makeText(WeatherActivity.this, "Shared Pref Changed", Toast.LENGTH_SHORT).show();
+				//TODO Below notifyDataSetChanged() is not working because List<String> cities is never updated
+				// Update cities and then call notifyDataSetChanged.
+				// Also add default city in the list from the location.
+				// They should be allowed to delete the city from shared prefs from the list.
+				((BaseAdapter)places_spinner.getAdapter()).notifyDataSetChanged();
+			}
+		};
+		prefs.registerOnSharedPreferenceChangeListener(sharedPrefListener);
 		
-		toolbar        = (Toolbar) findViewById(R.id.app_bar);
-		actionBar      = getActionBar();
+		places_spinner.setAdapter(getSharedPrefAdapter());
 		
 		setSupportActionBar(toolbar);
 		getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -112,9 +146,9 @@ public class WeatherActivity extends ActionBarActivity implements
 		
 		if(savedInstanceState == null)
 		{
-			displayView(0);
-			createLocationRequest();
-			buildGoogleApiClient();
+//			displayView(0);
+//			createLocationRequest();
+//			buildGoogleApiClient();
 		}
 		else
 		{
@@ -122,6 +156,23 @@ public class WeatherActivity extends ActionBarActivity implements
 		}
 	}
 	
+	private ArrayAdapter<String> getSharedPrefAdapter() {
+		
+		String       placesListJson = prefs.getString(getResources().getString(R.string.places_list), "default");
+		List<Place>  places         = placesListJson.equals("default") ? new ArrayList<Place>() : (List<Place>) new Gson().fromJson(placesListJson, new TypeToken<List<Place>>(){}.getType());
+		List<String> cities         = new ArrayList<String>();
+		
+		for(Place place: places)
+		{
+			cities.add(place.getCity());
+		}
+		
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,cities);
+		
+		return adapter;
+		
+	}
+
 	private void createLocationRequest() {
 		
 		locationRequest = new LocationRequest();
@@ -145,7 +196,6 @@ public class WeatherActivity extends ActionBarActivity implements
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
-//		drawerToggle.syncState();
 	}
 	
 	public void displayView(int position) {
@@ -162,6 +212,9 @@ public class WeatherActivity extends ActionBarActivity implements
 					break;
 				case 2:
 					retainedFragment = new HourlyFragment();
+					break;
+				case 3:
+					retainedFragment = new PlacesFragment();
 					break;
 				default:
 					break;
@@ -300,7 +353,27 @@ public class WeatherActivity extends ActionBarActivity implements
 			requestWeatherData(location);
 	}
 	
+	public RequestQueue getRequestQueueObject()
+	{
+		return requestQueue;
+	}
 	
+	public List<String> getCity_list() {
+		return city_list;
+	}
+
+	public void setCity_list(List<String> city_list) {
+		this.city_list = city_list;
+	}
+
+	public SharedPreferences getPrefs() {
+		return prefs;
+	}
+
+	public void setPrefs(SharedPreferences prefs) {
+		this.prefs = prefs;
+	}
+
 	private void requestWeatherData(Location location) {
 		
 		String ENDPOINT = "http://www.30secondweather.com";
@@ -344,7 +417,7 @@ public class WeatherActivity extends ActionBarActivity implements
 					}
 				});
 		
-		request.add(getWeatherRequest);
+		requestQueue.add(getWeatherRequest);
 	}
 	
 	@Override
